@@ -402,55 +402,6 @@ height doesn't suffer that limitation."
   :group 'imenu-list
   :type 'hook)
 
-(defun imenu-list-split-size ()
-  "Convert `imenu-list-size' to proper argument for `split-window'."
-  (let ((frame-size (if (member imenu-list-position '(left right))
-                        (frame-width)
-                      (frame-height))))
-    (cond ((integerp imenu-list-size) (- imenu-list-size))
-          (t (- (round (* frame-size imenu-list-size)))))))
-
-(defun imenu-list-display-buffer (buffer alist)
-  "Display the imenu-list buffer at the side.
-This function should be used with `display-buffer-alist'.
-See `display-buffer-alist' for a description of BUFFER and ALIST."
-  (or (get-buffer-window buffer)
-      (let ((window (ignore-errors (split-window (frame-root-window) (imenu-list-split-size) imenu-list-position))))
-        (when window
-          ;; since Emacs 27.0.50, `window--display-buffer' doesn't take a
-          ;; `dedicated' argument, so instead call `set-window-dedicated-p'
-          ;; directly (works both on new and old Emacs versions)
-          (window--display-buffer buffer window 'window alist)
-          (set-window-dedicated-p window t)
-          window))))
-
-(defun imenu-list-install-display-buffer ()
-  "Install imenu-list display settings to `display-buffer-alist'."
-  (cl-pushnew `(,(concat "^" (regexp-quote imenu-list-buffer-name) "$")
-                imenu-list-display-buffer)
-              display-buffer-alist
-              :test #'equal))
-
-(defun imenu-list-purpose-display-condition (_purpose buffer _alist)
-  "Display condition for use with window-purpose.
-Return t if BUFFER is the imenu-list buffer.
-
-This function should be used in `purpose-special-action-sequences'.
-See `purpose-special-action-sequences' for a description of _PURPOSE,
-BUFFER and _ALIST."
-  (string-equal (buffer-name buffer) imenu-list-buffer-name))
-
-(defun imenu-list-install-purpose-display ()
-  "Install imenu-list display settings for window-purpose.
-Install entry for imenu-list in `purpose-special-action-sequences'."
-  (cl-pushnew '(imenu-list-purpose-display-condition imenu-list-display-buffer)
-              purpose-special-action-sequences
-              :test #'equal))
-
-(imenu-list-install-display-buffer)
-(eval-after-load 'window-purpose
-  '(imenu-list-install-purpose-display))
-
 
 ;;; define major mode
 
